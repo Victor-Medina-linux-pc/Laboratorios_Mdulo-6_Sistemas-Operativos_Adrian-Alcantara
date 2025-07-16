@@ -1,0 +1,153 @@
+Comandos usados práctica 1
+============================================
+
+# Instalar GPG2
+sudo apt update
+sudo apt install gnupg2 -y
+
+# Crear un directorio para la práctica
+mkdir ~/practica_gpg
+cd ~/practica_gpg
+
+# Crear un archivo con contenido
+echo "Este archivo está cifrado con GPG2" > secreto.txt
+
+# Cifrar el archivo con contraseña
+gpg2 -c secreto.txt  # crea: secreto.txt.gpg
+
+# Intentar ver el archivo (verás caracteres ilegibles)
+cat secreto.txt.gpg
+
+# Eliminar archivo original para simular recuperación
+rm secreto.txt
+
+# Descifrar el archivo
+gpg2 secreto.txt.gpg
+
+# Verificar el contenido
+cat secreto.txt
+
+
+
+
+Comandos usados práctica 3
+============================================
+
+# Instalar servicios
+sudo apt install apache2 vsftpd openssh-server -y
+
+# Habilitar e iniciar servicios
+sudo systemctl enable --now apache2
+sudo systemctl enable --now vsftpd
+sudo systemctl enable --now ssh
+
+sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP
+
+# Ver reglas activas
+sudo iptables -L -n --line-numbers
+
+# Eliminar reglas DROP (ajustar número si cambió el orden)
+sudo iptables -D INPUT -p tcp --dport 80 -j DROP
+sudo iptables -D INPUT -p tcp --dport 21 -j DROP
+sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+
+# O permitir explícitamente
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 21 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+sudo apt install ufw -y
+sudo ufw enable
+
+# Bloquear
+sudo ufw deny 80
+sudo ufw deny 21
+sudo ufw deny 22
+
+# Permitir nuevamente
+sudo ufw allow 80
+sudo ufw allow 21
+sudo ufw allow 22
+
+# Ver reglas UFW
+sudo ufw status numbered
+
+Comandos usados práctica 3
+============================================
+cd /tmp
+sudo apt install build-essential libpcap-dev libpcre3-dev libdumbnet-dev bison flex zlib1g-dev liblzma-dev openssl libssl-dev -y
+
+# DAQ
+wget https://www.snort.org/downloads/snort/daq-2.0.7.tar.gz
+tar -xvzf daq-2.0.7.tar.gz
+cd daq-2.0.7
+./configure && make && sudo make install
+sudo ldconfig
+
+# Snort
+cd /tmp
+wget https://www.snort.org/downloads/snort/snort-2.9.20.tar.gz
+tar -xvzf snort-2.9.20.tar.gz
+cd snort-2.9.20
+./configure --enable-sourcefire
+make
+sudo make install
+
+sudo mkdir -p /etc/snort/rules
+sudo mkdir /var/log/snort
+sudo touch /etc/snort/snort.conf
+sudo groupadd snort
+sudo useradd snort -r -s /sbin/nologin -c SNORT_IDS -g snort
+sudo chown -R snort:snort /var/log/snort
+
+sudo nano /etc/snort/rules/local.rules
+
+alert icmp any any -> $HOME_NET any (msg:"ICMP detectado"; sid:1000001;)
+alert tcp any any -> $HOME_NET 21 (msg:"FTP detectado"; sid:1000002;)
+alert tcp any any -> $HOME_NET 22 (msg:"SSH detectado"; sid:1000003;)
+alert tcp any any -> $HOME_NET 80 (msg:"HTTP detectado"; sid:1000004;)
+
+sudo nano /etc/snort/snort.conf
+
+var HOME_NET any
+include /etc/snort/rules/local.rules
+
+sudo snort -T -c /etc/snort/snort.conf
+
+sudo snort -A console -q -u snort -g snort -c /etc/snort/snort.conf -i ens33
+
+Comandos usados práctica 4
+============================================
+
+# Instalar módulo PAM
+sudo apt install libpam-google-authenticator -y
+
+# Configurar el usuario (ej: medina)
+su - medina
+google-authenticator
+
+https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/medina@host?secret=XXXXX&issuer=host
+
+sudo nano /etc/pam.d/sshd
+
+auth required pam_google_authenticator.so
+
+sudo nano /etc/ssh/sshd_config
+
+ChallengeResponseAuthentication yes
+UsePAM yes
+PasswordAuthentication yes
+AuthenticationMethods password
+
+PubkeyAuthentication no
+
+ssh medina@192.168.1.6
+
+Debes ingresar:
+
+Contraseña del usuario
+
+Código generado en Google Authenticator
+
